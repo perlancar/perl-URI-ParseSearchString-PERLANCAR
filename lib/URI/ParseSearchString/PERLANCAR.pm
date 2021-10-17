@@ -1,74 +1,47 @@
+## no critic: Modules::ProhibitAutomaticExportation
 package URI::ParseSearchString;
 
-require Exporter;
-@ISA = (Exporter);
-@EXPORT = ( qw (parse_search_string findEngine se_host se_name se_term) );
-
-use warnings;
 use strict;
+use warnings;
+
 use URI;
 use Data::Dumper;
 
-=encoding utf8
+require Exporter;
 
-=head1 NAME
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
-URI::ParseSearchString - parse search engine referrer URLs and extract keywords used
-
-=head1 VERSION
-
-Version 3.51  (Diablo 3 edition)
-
-=cut
-
-our $VERSION = '3.51';
-
-=head1 SYNOPSIS
-
-  use URI::ParseSearchString ;
-
-  my $uparse = new URI::ParseSearchString();
-  my $ref    = 'http://www.google.com/search?hl=en&q=a+simple+test&btnG=Google+Search';
-    
-  my $query_terms = $uparse->se_term( $ref );
-  my $canonical   = $uparse->se_name( $ref );
-  my $hostname    = $uparse->se_host( $ref );
-
-=head1 FUNCTIONS
-
-=head2 new
-  
-  Creates a new instance object of the module.
-  
-  my $uparse = new URI::ParseSearchString() ;
-
-=cut
+our @ISA = qw(Exporter);
+our @EXPORT = ( qw (parse_search_string findEngine se_host se_name se_term) );
 
 my $RH_LOOKUPS = {
-    
+
     'answers.yahoo.com'     => { name => 'Yahoo Answers', q=>'p' },
-    
+
    'sapo.pt'                => { name => 'Pesquisa SAPO', q => 'q'},
    'iol.pt'                 => { name => 'Pesquisa Iol',  q => 'q'},
    'pesquisa.clix.pt'       => { name => 'Pesquisa Clix', q => 'question'},
    'aeiou.pt'               => { name => 'Aeiou',         q => 'q'},
    'cuil.pt'                => { name => 'Cuil PT',       q => 'q' },
 
-	
+
    'fotos.sapo.pt'          => { name => 'SAPO fotos',    q => 'word'},
    'videos.sapo.pt'         => { name => 'SAPO videos',   q => 'word'},
    'sabores.sapo.pt'        => { name => 'SAPO sabores',  q => 'cxSearch'},
    'jn.sapo.pt'             => { name => 'Jornal Noticias', q => 'Pesquisa'},
    'dn.sapo.pt'             => { name => 'Diario Noticias', q => 'Pesquisa'},
-	
-	
+
+
    'rtp.pt'                 => { name => 'Rtp',           q => 'search'},
    'record.pt'              => { name => 'Jornal Record', q => 'q'},
    'correiodamanha.pt'      => { name => 'Correio da Manha',        q => 'pesquisa'},
    'correiomanha.pt'        => { name => 'Correio Manha',        q => 'pesquisa'},
    'publico.clix.pt'        => { name => 'Publico',       q => 'q'},
    'xl.pt'                  => { name => 'XL',            q => 'pesquisa'},
-        
+
    'abacho.com'             => { name => 'Abacho',        q => 'q'},
    'alice.it'               => { name => 'Alice.it',      q => 'qs' },
    'altavista.com'          => { name => 'Altavista',     q => 'q' },
@@ -376,7 +349,7 @@ my $RH_LOOKUPS = {
    'tesco.net'              => { name => 'Tesco Search',  q => 'q' },
    'tiscali.co.uk'          => { name => 'Tiscali UK',    q => 'query' },
    'bing.com'               => { name => 'Bing',          q => 'q' },
-   
+
    'acbusca.com'            => { name => 'ACBusca',          q => 'query' },
    'atalhocerto.com.br'     => { name => 'Atalho Certo',     q => 'keyword' },
    'bastaclicar.com.br'     => { name => 'Basta Clicar',     q => 'search' },
@@ -395,59 +368,24 @@ my $RH_LOOKUPS = {
    'minasplanet.com.br'     => { name => 'Minas Planet',     q => 'term' },
    'speedybusca.com.br'     => { name => 'SpeedyBusca',      q => 'q' },
    'vaibuscar.com.br'       => { name => 'Vai Busca',        q => 'q' },
-   
+
    'search.conduit.com'     => { name => 'Conduit',          q=>'q'   },
    'in.search.yahoo.com'    => { name => 'Yahoo India',      q => 'p'  },
    'rediff.com'             => { name => 'Rediff',           q => 'MT' },
    'guruji.com'             => { name => 'Guruji',           q => 'q'  },
-   
+
    'isohunt.com'            => { name => 'Isohunt',          q => 'ihq' },
    'btjunkie.org'           => { name => 'BT Junkie',        q => 'q' },
    'torrentz.eu'            => { name => 'Torrentz',         q => 'f' }
-   
+
 };
 
 sub new {
   my $class        = shift ;
   my $self         = { } ;
-  $self->{engines} = $RH_LOOKUPS; 
+  $self->{engines} = $RH_LOOKUPS;
   return bless $self, $class ;
 }
-
-=head2 parse_search_string
-
-This module provides a simple function to parse and extract search engine query strings. It was designed and tested having
-Apache referrer logs in mind. It can be used for a wide number of purposes, including tracking down what keywords people use
-on popular search engines before they land on a site. Although a number of existing modules and scripts exist for this purpose,
-the majority of them are either outdated using obsolete search strings associated with each engine.
-
-The default function exported is "parse_search_string" which accepts an unquoted referrer string as input and returns the 
-search engine query contained within. It currently works with both escaped and un-escaped queries and will translate the search
-terms before returning them in the latter case. The function returns undef in all other cases and errors.
-
-for example: 
-
-   my $ref   = 'http://www.google.com/search?hl=en&q=a+simple+test&btnG=Google+Search';
-   my $terms = 
-      $uparse->parse_search_string( $ref );
-
-would return I<'a simple test'>
-
-whereas
-
-   my $ref   = 'http://www.mamma.com/Mamma?utfout=1&qtype=0&query=a+more%21+complex_+search%24&Submit=%C2%A0%C2%A0Search%C2%A0%C2%A0';
-   my $terms =  
-      $uparse->parse_search_string( $ref );
-
-would return I<'a more! complex_ search$'> 
-
-=cut
-
-=head2 se_term
-
-Same as parse_search_string().
-
-=cut
 
 sub se_term {
   my $self   = shift ;
@@ -461,32 +399,32 @@ sub se_term {
 sub _uri {
    my $self   = shift;
    my $string = shift;
-   
+
    return unless defined($string);
-   
+
    ## create a new URI object
 	## and return unless its http or https
-	
+
 	my $uri = URI->new( $string );
-	return 
-	   unless (defined($uri) 
+	return
+	   unless (defined($uri)
 	       && (ref($uri) eq 'URI::http' || ref($uri) eq 'URI::https'));
-	
+
 	## feedster and technorati as they do not follow
 	## the usual search patterns thus we extract the query
 	## terms by taking the last element from the path segments
-	
+
     my $host = $uri->host;
-    
+
     return unless defined($host) && $host;
-    
+
    if ( $host =~ m/(feedster|technorati)\.com$/ ){
 	   $uri->query_form( q => ( $uri->path_segments)[-1]);
 	}
 
 	## clean up the host until it matches
 	## something we already know about
-	
+
 	 while( ! defined $self->{'engines'}{ $host }){
         my $c = index($host, '.');
         last if $c <0;
@@ -494,67 +432,46 @@ sub _uri {
     }
 
     return ($uri, $host);
-    
-}
 
+}
 
 sub parse_search_string {
    my $self   = shift ;
    my $string = shift ;
-	return unless defined($string); 
-	
+	return unless defined($string);
+
 	my ($uri,$host) = $self->_uri( $string );
 	return unless defined($uri);
-	
+
 	## get rid of the www
 	$host =~ m!^www\.!;
-		
+
 	## find the query parameter the engine uses
 	my $q = $self->{'engines'}{$host}{'q'};
 	return unless defined $q;
-	
+
 	## return the string passed to the query parameter
 	my %h_query = $uri->query_form;
-	
+
 	return $h_query{$q}
 }
-
-=head2 findEngine
-
-Returns a list with the hostname of the search engine as the first element and 
-the canonical name as the second element.
-
-  my $ref = 'http://www.google.com/search?hl=en&q=a+simple+test&btnG=Google+Search';
-  my ($hostname, $canonical) = $uparse->findEngine( $ref ) ;
-
-This will return 'google.com' as the search engine hostname and 'Google' as the name.
-This function will return I<undef> on error.
-
-=cut
 
 sub findEngine {
   my $self    = shift ;
   my $string  = shift ;
- 
+
   return unless defined($string);
-  
+
   ## create a URI object
-  
+
   my ($uri,$hostname) = $self->_uri( $string );
   return unless defined($uri) && $uri;
   return unless defined($hostname) && $hostname;
-  
+
   my $canonical = $self->{'engines'}->{$hostname}->{'name'};
-	
+
   return ($hostname,$canonical);
 }
-
-=head2 se_host 
-
-Wrapper around findEngine - returns just the hostname.
-This function will return I<undef> on error.
-
-=cut
 
 sub se_host {
   my $self   = shift ;
@@ -564,13 +481,6 @@ sub se_host {
   return $host ;
 }
 
-=head2 se_name
-
-Wrapper around findEngine - returns just the canonical name;
-This function will return I<undef> on error.
-
-=cut
-
 sub se_name {
   my $self   = shift ;
   my $string = shift ;
@@ -579,74 +489,91 @@ sub se_name {
   return $name ;
 }
 
-=head1 SUPPORTED ENGINES
+1;
+# ABSTRACT: Parse search engine referrer URLs and extract keywords used
 
-Currently supported search engines include: Sproose, Google Namibia, Google Ivory Coast, Google Oman, Technorati, Google Ecuador, 
-Google Norfolk Island, Mahalo, Google UK, Yahoo! UK, Google Micronesia, Google Bahrain, Basta Clicar, 
-Giga Busca, Google Greece, Google Belgium, Google Egypt, Google Chile, Godado (IT), Google Australia, 
-Google Uruguay, Google India, Google Taiwan, Google Ukraine, Google US, Terra ES, 
-Tesco Search, Megasearching, SAPO videos, Google Nepal, Google Israel, Google US Virgin Islands, Google Hungary, 
-Google San Marino, Google Croatia, Google dot jobs, Google Panama, Google Malaysia, Internetica, Google Brunei Darussalam,
-Google Denmark, Google Pakistan, Google Solomon Islands, Google dot biz, Google Lesotho, IceRocket, Google Greenland, Fireball DE,
-Rtp, Google Portugal, Google Samoa, Google Kazakhstan, Google Blogsearch, Google Thailand, Google, Google Antiqua and Barbuda, 
-Google Germany, Google Moldova, Google Zambia, Google Greece, Google Sri Lanka, Google Ireland, Google Austria, 
-Google Peru, Google Guatemala, ICQ dot com, AOL UK, Google Guyana, In GR, Google dot info, MyWay, Pathfinder GR, Google Costa Rica, 
-KataTudo, Google Jamaica, Google Vietnam, Google Morocco, Google Gambia, Google Singapore, Google Mauritius, Altavista, Google Afghanistan, 
-Google Cote dIvoire, Google Kazakhstan, Google Czech Rep, Phantis GR, Google Bahamas, Google United Arab Emirates, Google East Timor, Ozu ES,
-Google Venezuela, Google Puerto Rico, Google Armenia, Google Croatia, Google Botswana, Google Tuvalu, Ask UK, Google Singapore, Mirago UK, 
-Google Greenland, MSN Arabia, Google Nauru, Publico, Robby GR, Minas Planet, Pesquisa Iol, Google Romania, Google South Korea, Google Jersey,
-Netscape, Busca Aqui, Google Bulgaria, Google Uzbekistan, Tiscali UK, Ithaki, Cadê, Lycos IT, Google Suriname, Excite IT, Google Hong Kong, 
-Kataweb IT, Google Burundi, Click Gratis, Google Vietnam, MSN, Alice.it, Google Honduras, Google Trinidad and Tobago, Google Uganda, XL, 
-Jornal Noticias, Google Cook Islands, Google Japan, Google Ecuador, Google Ghana, Google Guadeloupe, Google Libya, Google Kenya, Fastbrowsersearch, 
-Aeiou, Google Niue, Jornal Record, HotBot, Google Honduras, Google Georgia, Google Fiji, Google Philipines, BBC Search, Google, Google Laos, 
-Soso, AltaVista Brasil, Lycos UK, SAPO fotos, Ask dot com, Google Netherlands, Google Philipines, Google Trinidad and Tobago, Google Turkey, 
-AllTheWeb, Google Japan, Google Argentina, Google Vanuatu, Blueyonder, Google Greenland, Google Samoa, Google Georgia, Google Slovakia, 
-Google Sri Lanka, Pesquisa SAPO, Google Latvia, Google Latvia, Correio Manha, Terra Busca, Google El Savador, Google Cambodia, 
-Google Mauritius, Google China, AOL Search, Google Tokelau, Google Tonga, Correio da Manha, Radar UOL, Google Jordan, Godado, Google Jordan, 
-Google Pitcairn Islands, Categorico IT, Google Morocco, Google Dominican Rep, Google France, Abacho, Google Azerbaijan, Google Andorra, Google Belize, 
-Google Paraguay, Simpatico IT, Google Ethiopia, Google Uganda, Google Poland, Google Bolivia, Google Hungary, Google Russia, Diario Noticias, 
-Google Puerto Rico, Google Montserrat, Yahoo! Japan, Google Seychelles, Mamma, Google Pitcairn Islands, Google  South Africa, Paglo, Google Malta, 
-Google Azerbaijan, Google New Zeland, Google China, Google Norway, Google Bosnia and Herzegovina, Google Indonesia, SpeedyBusca, Entrada, Google Anguilla, 
-Google Rep of Congo, Google Dominica, Google Finland, Altavista UK, Google Guyana, MSN UK, Yahoo Answers, Google British Virgin Islands, Google Guadeloupe,
-Google Lithuania, Google Antiqua and Barbuda, Google Bahamas, Google Malawi, MSN Prodigy, Bing, Google Bolivia, Google Djubouti, Google Uzbekistan, Fastweb IT, 
-Google Tajikistan, Virgin Search, Google Nigeria, Yahoo Japan, Pesquisa Clix, Google Grenada, Google Haiti, Google American Samoa, Google Pakistan, 
-Google Cocos Islands, Google Hong Kong, NTLWorld, ilMotore, Google Belize, Google Guernsey, Google Sweden, Google Anguilla, Google Bangladesh, Google Isle of Man, 
-Google Guernsey, Google Kyrgyzstan, Google Dem Rep of Congo, Google Malawi, Orange Search, Google Seychelles, Google Guyana, Google Gibraltar, 
-oogle Italy, Google Kiribati, TheSpider IT, Google Nicaragua, Google Russia, Google Venezuela, Google Poland, Google Brazil, Google Senegal, Conduit, Lycos, 
-Google Isle of Man, Live.com, Google Italy, Libero IT, Google Canada, Google Nauru, Google Liechtenstein, Google Afghanistan, Cuil, Google Zimbabwe, Google Mauritius, 
-Orange ES, Google Burundi, Google Portugal, ACBusca, Bem Rapido, Atalho Certo, Excite, Clusty, Yahoo Brazil, My Web Search, Google Spain, Google Uzbekistan, Google,
-Google Mexico, T-Online, Google dot mobi, Google Luxembourg, Google Austria, Yahoo!, Google Kiribati, Sweetim, Vai Busca, Google Mongolia, Google Saudi Arabia, Google dot net,
-Google Maldives, Google Trinidad and Tobago, Google Jersey, Feedster, Google Turkmenistan, Google Switzerland, Google Norfolk Island, Suche DE, Google Malawi, Google Rwanda, 
-Lycos ES, Google Burundi, Google French Guiana, Google Kyrgyzstan, Google Saint Helena, VirginMedia, Google Iceland, SAPO sabores, Google India, Google Cuba, 
-Google US Virgin Islands, Google Taiwan, Google Sao Tome, Google Slovenia, Starware, Google Estonia, Conduit, Yahoo India, Rediff, Guruji
+=head1 SYNOPSIS
 
-=head1 AUTHOR
+  use URI::ParseSearchString ;
+
+  my $uparse = new URI::ParseSearchString();
+  my $ref    = 'http://www.google.com/search?hl=en&q=a+simple+test&btnG=Google+Search';
+
+  my $query_terms = $uparse->se_term( $ref );
+  my $canonical   = $uparse->se_name( $ref );
+  my $hostname    = $uparse->se_host( $ref );
+
+
+=head1 METHODS
+
+=head2 new
+
+Creates a new instance object of the module.
+
+  my $uparse = new URI::ParseSearchString() ;
+
+
+=head1 FUNCTIONS
+
+=head2 parse_search_string
+
+This module provides a simple function to parse and extract search engine query strings. It was designed and tested having
+Apache referrer logs in mind. It can be used for a wide number of purposes, including tracking down what keywords people use
+on popular search engines before they land on a site. Although a number of existing modules and scripts exist for this purpose,
+the majority of them are either outdated using obsolete search strings associated with each engine.
+
+The default function exported is "parse_search_string" which accepts an unquoted referrer string as input and returns the
+search engine query contained within. It currently works with both escaped and un-escaped queries and will translate the search
+terms before returning them in the latter case. The function returns undef in all other cases and errors.
+
+for example:
+
+   my $ref   = 'http://www.google.com/search?hl=en&q=a+simple+test&btnG=Google+Search';
+   my $terms =
+      $uparse->parse_search_string( $ref );
+
+would return I<'a simple test'>
+
+whereas
+
+   my $ref   = 'http://www.mamma.com/Mamma?utfout=1&qtype=0&query=a+more%21+complex_+search%24&Submit=%C2%A0%C2%A0Search%C2%A0%C2%A0';
+   my $terms =
+      $uparse->parse_search_string( $ref );
+
+would return I<'a more! complex_ search$'>
+
+=head2 se_term
+
+Same as parse_search_string().
+
+=head2 findEngine
+
+Returns a list with the hostname of the search engine as the first element and
+the canonical name as the second element.
+
+  my $ref = 'http://www.google.com/search?hl=en&q=a+simple+test&btnG=Google+Search';
+  my ($hostname, $canonical) = $uparse->findEngine( $ref ) ;
+
+This will return 'google.com' as the search engine hostname and 'Google' as the name.
+This function will return I<undef> on error.
+
+=head2 se_host
+
+Wrapper around findEngine - returns just the hostname.
+This function will return I<undef> on error.
+
+=head2 se_name
+
+Wrapper around findEngine - returns just the canonical name;
+This function will return I<undef> on error.
+
+
+=head1 ORIGINAL AUTHOR
 
 Spiros Denaxas, C<< <s.denaxas at gmail.com> >>
 
-=head1 SOURCE CODE
 
-The source code can be found on github L<https://github.com/spiros/URI-ParseSearchString>
-
-=head1 BUGS
-
-This is my first CPAN module so I encourage you to send all comments, especially bad, 
-to my email address.
-
-This could not have been possible without the support of my co-workers at 
-http://nestoria.co.uk - the easiest way of finding UK property.
-
-=head1 SUPPORT
-
-For more information, you could also visit my blog: 
-
-	http://blog.ffffruit.com
-
-=over 4
-
-=back
-
-=head1 COPYRIGHT & LICENSE
+=head1 ORIGINAL COPYRIGHT & LICENSE
 
 Copyright 2011 Spiros Denaxas, all rights reserved.
 
@@ -654,5 +581,3 @@ This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =cut
-
-1; # End of URI::ParseSearchString
